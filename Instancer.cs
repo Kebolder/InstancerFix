@@ -349,7 +349,25 @@ namespace VRLabs.Instancer
 			if (targetPath.StartsWith(sourceFolder))
 			{
 				string newTargetPath = targetFolder + targetPath.Remove(0, sourceFolder.Length);
-				Object newObject = AssetDatabase.LoadAllAssetsAtPath(newTargetPath).Where(obj => obj.GetType() == target.GetType()).FirstOrDefault(x => x.name == target.name);
+
+				// Check if the target file exists in the new instance folder
+				if (AssetDatabase.LoadAssetAtPath<Object>(newTargetPath) == null)
+				{
+					return (target, false);
+				}
+
+				// Load the main asset at this path first
+				Object mainAsset = AssetDatabase.LoadMainAssetAtPath(newTargetPath);
+				if (mainAsset != null && mainAsset.GetType() == target.GetType())
+				{
+					return (mainAsset, true);
+				}
+
+				// If not the main asset, find the matching sub-asset by type and name
+				// This ensures we get the asset from THIS specific instance folder
+				Object[] allAssets = AssetDatabase.LoadAllAssetsAtPath(newTargetPath);
+				Object newObject = allAssets.Where(obj => obj != null && obj.GetType() == target.GetType()).FirstOrDefault(x => x.name == target.name);
+
 				return (newObject, newObject != null);
 			}
 
